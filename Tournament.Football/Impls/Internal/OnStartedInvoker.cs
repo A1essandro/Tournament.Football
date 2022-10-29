@@ -1,31 +1,29 @@
 using System;
 
-namespace Tournament.Football.Impls.Internal
+namespace Tournament.Football.Impls.Internal;
+
+internal class OnStartedInvoker<TStageResult>
 {
 
-    internal class OnStartedInvoker<TStageResult>
+    private object _startedEventLocker = new object();
+    private bool _isStarted;
+
+    public OnStartedInvoker(FootballStageBase<TStageResult> stage, Action invoke)
     {
-
-        private object _startedEventLocker = new object();
-        private bool _isStarted;
-
-        public OnStartedInvoker(FootballStageBase<TStageResult> stage, Action invoke)
+        foreach (var game in stage.Schedule)
         {
-            foreach (var game in stage.Schedule)
-            {
-                game.OnResultSet += g =>
+            game.OnResultSet += g =>
+           {
+               lock (_startedEventLocker)
                {
-                   lock (_startedEventLocker)
+                   if (!_isStarted)
                    {
-                       if (!_isStarted)
-                       {
-                           _isStarted = true;
-                           invoke();
-                       }
+                       _isStarted = true;
+                       invoke();
                    }
-               };
-            }
+               }
+           };
         }
-
     }
+
 }
